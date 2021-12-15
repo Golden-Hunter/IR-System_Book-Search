@@ -28,7 +28,7 @@ def tf_idf_preprocess(processed_data, inverted_index, length):
     '''
     print("Time required to create tf-idf for corpus")
     start_time = time.time()
-    no_of_doc = 34886
+    no_of_doc = 431
 
     # Loading term frequencies
     df = load(processed_data)
@@ -63,7 +63,8 @@ def tf_idf_preprocess(processed_data, inverted_index, length):
         tf_idf_dict[doc]=doc_dict
 
     print("--- %s seconds ---" % (time.time() - start_time))
-    return tf_idf_dict  
+    # print(tf_idf_dict)
+    return tf_idf_dict
 
 def main():
     tf_idf_dict = tf_idf_preprocess("processed_data.obj", "inverted_index.obj", "Length")
@@ -77,6 +78,5 @@ def main():
     filehandler.close()
 
 main()
-
 
 

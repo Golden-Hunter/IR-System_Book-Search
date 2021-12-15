@@ -3,6 +3,7 @@
 import time
 import nltk
 import pandas as pd
+
 nltk.download('punkt')
 nltk.download('stopwords')
 from nltk.tokenize import WhitespaceTokenizer
@@ -10,6 +11,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 import pickle
 
+COUNT = 431
 
 class ProcessData:
     
@@ -27,8 +29,8 @@ class ProcessData:
         Reads the dataset which is in csv format and stores it as a dataframe in df.
         Returns the dataframe df.
         '''
-        df = pd.read_csv('wiki_movie_plots_deduped.csv')
-        filehandler = open("movie_plot.obj","wb")
+        df = pd.read_csv('database.csv')
+        filehandler = open("book_description.obj","wb")
         pickle.dump(df,filehandler)
         filehandler.close()
         return df
@@ -45,11 +47,11 @@ class ProcessData:
         df = df.fillna('')
         
         # 'data' variable stores column names used to form the corpus
-        data = ['Plot','Title','Origin/Ethnicity', 'Director', 'Cast', 'Genre' ]
+        data = ['_id__void','_id','title','isbn','pageCount','publishedDate__$date','thumbnailUrl','shortDescription','longDescription','status','authors__001','authors__002','authors__003','authors__004','authors__005','authors__006','authors__007','authors__008','categories__001','categories__002','categories__003','categories__004']
         
         # Convert all text to Lower Case
         for item in data:
-            df[item] = df[item].str.lower()
+            df[item] = df[item].astype(str).str.lower()
         df = df.fillna('')
         return df
         
@@ -81,15 +83,20 @@ class ProcessData:
         Takes parameter as the dataframe and returns the dataframe with columns containing the tokens.
         '''
         
-        df['TokensPlot'] = df['Plot'].apply(self.tokenizeHelper)
-        df['TokensTitle'] = df['Title'].apply(self.tokenizeHelper)
-        df['TokensOrigin'] = df['Origin/Ethnicity'].apply(self.tokenizeHelper)
-        df['TokensDirector'] = df['Director'].apply(self.tokenizeHelper)
-        df['TokensCast'] = df['Cast'].apply(self.tokenizeHelper)
-        df['TokensGenre'] = df['Genre'].apply(self.tokenizeHelper)
+        df['TokensTitleID'] = df['_id'].apply(self.tokenizeHelper)
+        df['TokensLDescription'] = df['longDescription'].apply(self.tokenizeHelper)
+        df['TokensSDescription'] = df['shortDescription'].apply(self.tokenizeHelper)
+        df['TokensTitle'] = df['title'].apply(self.tokenizeHelper)
+        df['TokensAuthor1'] = df['authors__001'].apply(self.tokenizeHelper)
+        df['TokensAuthor2'] = df['authors__002'].apply(self.tokenizeHelper)
+        df['TokensAuthor3'] = df['authors__003'].apply(self.tokenizeHelper)
+        df['TokensCategory1'] = df['categories__001'].apply(self.tokenizeHelper)
+        df['TokensCategory2'] = df['categories__002'].apply(self.tokenizeHelper)
+        df['TokensCategory3'] = df['categories__003'].apply(self.tokenizeHelper)
         
         # Tokens column stores the tokens for the corresponding document
-        df['Tokens'] = df['TokensPlot'] + df['TokensTitle'] + df['TokensOrigin'] + df['TokensDirector'] + df['TokensCast'] + df['TokensGenre']
+
+        df['Tokens'] = df['TokensTitleID'] + df['TokensLDescription'] + df['TokensSDescription'] + df['TokensTitle'] + df['TokensAuthor1'] + df['TokensAuthor2'] + df['TokensAuthor3'] + df['TokensCategory1'] + df['TokensCategory2'] + df['TokensCategory3']
         df['Length'] = df.Tokens.apply(len)
         df['TitleLength'] = df.TokensTitle.apply(len)
         print("--- %s seconds ---" % (time.time() - self.start_time))
@@ -163,7 +170,7 @@ class ProcessData:
         
         Inverted_Index = pd.DataFrame()
         tokens = set(df_tokenized['Unique_Words'][0])
-        for i in range (0, 34885):
+        for i in range (0, COUNT-1):
             tokens = set.union(tokens,set(df_tokenized['Unique_Words'][i+1]))
         Inverted_Index = pd.DataFrame(tokens)
         Inverted_Index.columns =['Words']
@@ -176,7 +183,7 @@ class ProcessData:
         '''
         
         inverted_index_dict = {}
-        for i in range (0, 34886):
+        for i in range (0, COUNT):
             for item in df_tokenized['Unique_Words'][i]:
                 if item in inverted_index_dict.keys():
                     inverted_index_dict[item]+=1
@@ -225,7 +232,8 @@ class ProcessData:
         Inverted_Index_Title = self.Vocabulary(df_Title)
         Inverted_Index_Title = self.InvertedIndex(Inverted_Index_Title, df_Title)
         # Storing inverted index of Title as pickle
-        self.Write("inverted_index_title.obj", Inverted_Index_Title)       
+        self.Write("inverted_index_title.obj", Inverted_Index_Title)
+        print(Inverted_Index_Title)
 
 Data = ProcessData()
 Data.main()
