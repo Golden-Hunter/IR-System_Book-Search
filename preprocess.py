@@ -2,36 +2,36 @@
 
 import time
 import nltk
-import pandas as pd
+import pandas as pnda
 
 nltk.download('punkt')
 nltk.download('stopwords')
-from nltk.tokenize import WhitespaceTokenizer
+from nltk.tokenize import WhitespaceTokenizer as tknizer
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-import pickle
+from nltk.stem import PorterStemmer as stemmer
+import pickle as pckl
 
-COUNT = 431
+COUNT = 6810  # numbe of documents in the database.csv file
 
 class ProcessData:
     
     def __init__(self):
         """
         This Class is used to process the Dataset, followed by Normalization and Tokenization.
-        The goal is to create an indexing list and store it in a pickle file.
+        The goal is to create an indexing list and store it in a pckl file.
         """
-        self.tokenizer_w = WhitespaceTokenizer()
+        self.tokenizer_w = tknizer()
         self.stop = stopwords.words('english')
-        self.ps = PorterStemmer()
+        self.ps = stemmer()
         
     def read(self):
         '''
         Reads the dataset which is in csv format and stores it as a dataframe in df.
         Returns the dataframe df.
         '''
-        df = pd.read_csv('database.csv')
-        filehandler = open("book_description.obj","wb")
-        pickle.dump(df,filehandler)
+        df = pnda.read_csv('database.csv')
+        filehandler = open("book_description.obj" , "wb")
+        pckl.dump(df , filehandler)
         filehandler.close()
         return df
     
@@ -47,7 +47,7 @@ class ProcessData:
         df = df.fillna('')
         
         # 'data' variable stores column names used to form the corpus
-        data = ['_id__void','_id','title','isbn','pageCount','publishedDate__$date','thumbnailUrl','shortDescription','longDescription','status','authors__001','authors__002','authors__003','authors__004','authors__005','authors__006','authors__007','authors__008','categories__001','categories__002','categories__003','categories__004']
+        data = ['isbn13', 'isbn10','title','subtitle','authors','categories','thumbnail','description','published_year','average_rating','num_pages','ratings_count']
         
         # Convert all text to Lower Case
         for item in data:
@@ -70,7 +70,7 @@ class ProcessData:
         
     def tokenizeHelper(self, text):
         '''
-        Calls the nltk WhiteSpaceTokenizer to tokenize.
+        Calls the nltk tknizer to tokenize.
         Takes parameter as the text and returns the tokenized text.
         '''
         
@@ -83,20 +83,20 @@ class ProcessData:
         Takes parameter as the dataframe and returns the dataframe with columns containing the tokens.
         '''
         
-        df['TokensTitleID'] = df['_id'].apply(self.tokenizeHelper)
-        df['TokensLDescription'] = df['longDescription'].apply(self.tokenizeHelper)
-        df['TokensSDescription'] = df['shortDescription'].apply(self.tokenizeHelper)
+        df['TokensDescription'] = df['description'].apply(self.tokenizeHelper)
+        df['TokensSubtitle'] = df['subtitle'].apply(self.tokenizeHelper)
         df['TokensTitle'] = df['title'].apply(self.tokenizeHelper)
-        df['TokensAuthor1'] = df['authors__001'].apply(self.tokenizeHelper)
-        df['TokensAuthor2'] = df['authors__002'].apply(self.tokenizeHelper)
-        df['TokensAuthor3'] = df['authors__003'].apply(self.tokenizeHelper)
-        df['TokensCategory1'] = df['categories__001'].apply(self.tokenizeHelper)
-        df['TokensCategory2'] = df['categories__002'].apply(self.tokenizeHelper)
-        df['TokensCategory3'] = df['categories__003'].apply(self.tokenizeHelper)
+        df['TokensAuthor'] = df['authors'].apply(self.tokenizeHelper)
+        df['TokensCategory'] = df['categories'].apply(self.tokenizeHelper)
+        df['Tokenspublished_year'] = df['published_year'].apply(self.tokenizeHelper)
+        df['Tokensaverage_rating'] = df['average_rating'].apply(self.tokenizeHelper)
+        df['Tokensnum_pages'] = df['num_pages'].apply(self.tokenizeHelper)
+        df['Tokensratings_count'] = df['ratings_count'].apply(self.tokenizeHelper)
+
         
         # Tokens column stores the tokens for the corresponding document
 
-        df['Tokens'] = df['TokensTitleID'] + df['TokensLDescription'] + df['TokensSDescription'] + df['TokensTitle'] + df['TokensAuthor1'] + df['TokensAuthor2'] + df['TokensAuthor3'] + df['TokensCategory1'] + df['TokensCategory2'] + df['TokensCategory3']
+        df['Tokens'] = df['TokensDescription'] + df['TokensSubtitle'] + df['TokensTitle'] + df['TokensAuthor'] + df['TokensCategory'] + df['Tokenspublished_year'] + df['Tokensaverage_rating'] + df['Tokensnum_pages'] + df['Tokensratings_count']
         df['Length'] = df.Tokens.apply(len)
         df['TitleLength'] = df.TokensTitle.apply(len)
         print("--- %s seconds ---" % (time.time() - self.start_time))
@@ -154,7 +154,7 @@ class ProcessData:
         self.start_time = time.time()
         
         df_tokenized['Unique_Words'] = df_tokenized['stemmed'].apply(set)
-        df_tokenized['Frequency'] = df_tokenized.apply(lambda x: self.BagOfWords(x.Unique_Words, x.stemmed), axis=1)
+        df_tokenized['Frequency'] = df_tokenized.apply(lambda x: self.BagOfWords(x.Unique_Words, x.stemmed), axis = 1)
         print("--- %s seconds ---" % (time.time() - self.start_time))
         return df_tokenized
     
@@ -168,12 +168,12 @@ class ProcessData:
         print("Time required to create the Inverted Index")
         self.start_time = time.time()
         
-        Inverted_Index = pd.DataFrame()
+        Inverted_Index = pnda.DataFrame()
         tokens = set(df_tokenized['Unique_Words'][0])
         for i in range (0, COUNT-1):
-            tokens = set.union(tokens,set(df_tokenized['Unique_Words'][i+1]))
-        Inverted_Index = pd.DataFrame(tokens)
-        Inverted_Index.columns =['Words']
+            tokens = set.union(tokens,set(df_tokenized['Unique_Words'][i + 1]))
+        Inverted_Index = pnda.DataFrame(tokens)
+        Inverted_Index.columns = ['Words']
         return Inverted_Index
     
     def InvertedIndex(self, Inverted_Index, df_tokenized):
@@ -186,11 +186,11 @@ class ProcessData:
         for i in range (0, COUNT):
             for item in df_tokenized['Unique_Words'][i]:
                 if item in inverted_index_dict.keys():
-                    inverted_index_dict[item]+=1
+                    inverted_index_dict[item] += 1
                 else:
-                    inverted_index_dict[item]=1
+                    inverted_index_dict[item] = 1
            
-        Inverted_Index = pd.Series(inverted_index_dict).to_frame()
+        Inverted_Index = pnda.Series(inverted_index_dict).to_frame()
 
         Inverted_Index.columns =['PostingList']
         print("--- %s seconds ---" % (time.time() - self.start_time))
@@ -198,11 +198,11 @@ class ProcessData:
 
     def Write(self, file, df):
         '''
-        Stores the dataframes as pickle files.
+        Stores the dataframes as pckl files.
         Takes filename and dataframe as parameter.
         '''
         filehandler = open(file,"wb")
-        pickle.dump(df,filehandler)
+        pckl.dump(df,filehandler)
         filehandler.close()
     
     def main(self):
@@ -214,7 +214,7 @@ class ProcessData:
         df = self.TermFrequency(df)
         # Stores only the required columns from the processed dataframe.
         df1 = df[['Length' , 'Frequency']]
-        # Storing inverted processed data as pickle
+        # Storing inverted processed data as pckl
         self.Write("processed_data.obj", df1)
         
         df_Title = df[['TokensTitle', 'TitleLength']]
@@ -226,14 +226,14 @@ class ProcessData:
 
         Inverted_Index = self.Vocabulary(df)
         Inverted_Index = self.InvertedIndex(Inverted_Index, df)
-        # Storing inverted index as pickle
+        # Storing inverted index as pckl
         self.Write("inverted_index.obj", Inverted_Index)
 
         Inverted_Index_Title = self.Vocabulary(df_Title)
         Inverted_Index_Title = self.InvertedIndex(Inverted_Index_Title, df_Title)
-        # Storing inverted index of Title as pickle
+        # Storing inverted index of Title as pckl
         self.Write("inverted_index_title.obj", Inverted_Index_Title)
-        print(Inverted_Index_Title)
+        # print(Inverted_Index_Title)
 
 Data = ProcessData()
 Data.main()

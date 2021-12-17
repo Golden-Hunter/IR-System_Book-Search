@@ -4,16 +4,9 @@ import pandas as pd
 import numpy as np
 import pickle
 
-def load(doc):
-    ''' 
-    Function to load a pickle file .
-    '''
-    file = open(doc,'rb')
-    df = pickle.load(file)
-    file.close()
-    return df
+from preprocess import COUNT
 
-def tf_idf_preprocess(processed_data, inverted_index, length):
+def preprocess_tfidf(inverted_index, processed_data, length):
     ''' 
     Function to create tf-idf for all the documents. 
     Data structures used includes Dictionary and Dataframes. 
@@ -28,55 +21,59 @@ def tf_idf_preprocess(processed_data, inverted_index, length):
     '''
     print("Time required to create tf-idf for corpus")
     start_time = time.time()
-    no_of_doc = 431
+    no_of_doc = COUNT
+
+    # Function to load a pickle file
+    file = open(processed_data, 'rb')
+    df = pickle.load(file)
+    file.close()
 
     # Loading term frequencies
-    df = load(processed_data)
-
     d_df = df.to_dict()
-    d_df =d_df[length]
-    
+    d_df = d_df[length]
 
     # Average length of all documents
-    avg_length= df[length].mean() 
-    
+    avg_length = df[length].mean()
+
     # Loading indexing list
-    ii_df = load(inverted_index)# indexing list
+    file = open(inverted_index, 'rb')
+    ii_df = pickle.load(file)
+    file.close()
 
-    ii_df= ii_df.to_dict()
-    ii_df=ii_df['PostingList'] 
+    ii_df = ii_df.to_dict()
+    ii_df = ii_df['PostingList']
 
-    k=1.75 # Parameter for BM25
-    b=0.75 # Parameter for BM25
-    
-    tf_idf_dict={}
+    k = 1.75  # Parameter for BM25
+    b = 0.75  # Parameter for BM25
+
+    tf_idf_dict = {}
 
     # Calculating tf-idf
-    for doc in range(0,no_of_doc):
-        doc_dict={}
-        for key,value in df['Frequency'][doc].items():
-            if key=='nan' or key=='null':
-             continue
-            tf = (value/d_df[doc]) 
+    for doc in range(0, no_of_doc):
+        doc_dict = {}
+        for key, value in df['Frequency'][doc].items():
+            if key == 'nan' or key == 'null':
+                continue
+            tf = (value/d_df[doc])
             idf = np.log(no_of_doc/(ii_df[key]))
-            doc_dict[key] = idf*( tf*(k+1) )/(tf + k*(1- b + b*(df[length][doc]/avg_length))) * 100
-        tf_idf_dict[doc]=doc_dict
+            doc_dict[key] = idf*(tf*(k+1))/(tf + k *
+                                            (1 - b + b*(df[length][doc]/avg_length))) * 100
+        tf_idf_dict[doc] = doc_dict
 
     print("--- %s seconds ---" % (time.time() - start_time))
     # print(tf_idf_dict)
     return tf_idf_dict
 
-def main():
-    tf_idf_dict = tf_idf_preprocess("processed_data.obj", "inverted_index.obj", "Length")
-    filehandler = open("tf-idf.obj","wb")
-    pickle.dump(tf_idf_dict,filehandler)
-    filehandler.close()
 
-    tf_idf_title_dict = tf_idf_preprocess("processed_data_title.obj", "inverted_index_title.obj", "TitleLength")
-    filehandler = open("tf-idf_title.obj","wb")
-    pickle.dump(tf_idf_title_dict,filehandler)
-    filehandler.close()
+# main function
+tf_idf_dict = preprocess_tfidf(
+    "inverted_index.obj", "processed_data.obj",  "Length")
+file_pointer = open("tf-idf.obj", "wb")
+pickle.dump(tf_idf_dict, file_pointer)
+file_pointer.close()
 
-main()
-
-
+tf_idf_title_dict = preprocess_tfidf(
+    "inverted_index_title.obj", "processed_data_title.obj",  "TitleLength")
+file_pointer = open("tf-idf_title.obj", "wb")
+pickle.dump(tf_idf_title_dict, file_pointer)
+file_pointer.close()
