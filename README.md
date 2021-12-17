@@ -22,3 +22,12 @@ This file contains the code for the deployment and start of the IR system on web
 
 ## INDEX.HTML / MAIN.CSS
 Contains the front end code for the site.
+
+
+
+# Developers:
+
+### Chinmay Lohani      - S20190010035
+### Yash Gupta          - S20190010197
+### Pawan Kumar Jaiswal - S20190010069
+### Laurel Verma        - S20190010109
