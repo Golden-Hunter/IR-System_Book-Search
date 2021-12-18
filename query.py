@@ -3,6 +3,8 @@ import nltk
 import pandas as pd
 import numpy as np
 import pickle
+
+from preprocess import COUNT
 nltk.download('punkt')
 nltk.download('stopwords')
 from nltk.corpus import stopwords 
@@ -10,6 +12,7 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from collections import defaultdict
 import heapq
+
 
 def load(doc):
     ''' 
@@ -29,7 +32,7 @@ def query_processing(query):
     Calculates the cosine similarity between the documents and query and ranking the same using a heap.
     Takes query as parameter and returns a list of top 10 highest ranked documents.
     '''
-    no_of_doc = 34886+1 # Actual number of documents + 1
+    no_of_doc = COUNT +1 # Actual number of documents + 1
 
     # All alphabets to lower case
     query= query.lower() 
@@ -37,7 +40,7 @@ def query_processing(query):
     # Preprocessing query removing unnecessary characters
     query = query.replace("\n"," ").replace("\r"," ")
     query = query.replace("'s"," ")
-    punctuationList = '!"#$%&\()*+,-./:;<=>?@[\\]^_{|}~'
+    punctuationList = '-./:;<=>?@[\\]^_{|}~!"#$%&\()*+,'
     x = str.maketrans(dict.fromkeys(punctuationList," "))
     query = query.translate(x)
 
